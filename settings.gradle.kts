@@ -1,0 +1,19 @@
+rootProject.name = "observability-spring-boot-starter"
+
+// Core module - Pure Java (Domain Layer용)
+include("observability-core")
+
+// Logging module - Application Layer용
+include("observability-logging")
+
+// Web module - HTTP Entry Point (adapter-in REST API용)
+include("observability-web")
+
+// Client module - HTTP Client TraceId 전파 (adapter-out HTTP용)
+include("observability-client")
+
+// Message module - SQS/Redis (adapter-in/out 메시지 큐용)
+include("observability-message")
+
+// Spring Boot Starter - 전체 통합 (bootstrap용)
+include("observability-starter")

@@ -1,0 +1,40 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+*.swo
+
+# Compiled
+*.class
+*.jar
+*.war
+*.ear
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test
+/test-output/
+
+# Local config
+local.properties
+*.local.*
+
+# Serena MCP
+.serena/
+
+# Eclipse bin
+bin/

@@ -1,0 +1,5 @@
+com.ryuqq.observability.starter.ObservabilityCoreAutoConfiguration
+com.ryuqq.observability.starter.ObservabilityWebAutoConfiguration
+com.ryuqq.observability.starter.ObservabilityClientAutoConfiguration
+com.ryuqq.observability.starter.ObservabilityMessageAutoConfiguration
+com.ryuqq.observability.starter.ObservabilityLoggingAutoConfiguration
