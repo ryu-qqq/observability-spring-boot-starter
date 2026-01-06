@@ -1,0 +1,125 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+    id 'jacoco'
+    alias(libs.plugins.spring.boot) apply false
+    alias(libs.plugins.spring.dependency.management)
+}
+
+group = property('group')
+version = property('version')
+
+// 모든 프로젝트 공통 설정
+allprojects {
+    repositories {
+        mavenCentral()
+    }
+}
+
+// 하위 모듈 공통 설정
+subprojects {
+    apply plugin: 'java-library'
+    apply plugin: 'maven-publish'
+    apply plugin: 'io.spring.dependency-management'
+    apply plugin: 'jacoco'
+
+    group = rootProject.group
+    version = rootProject.version
+
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(Integer.parseInt(property('javaVersion') as String))
+        }
+        withJavadocJar()
+        withSourcesJar()
+    }
+
+    dependencyManagement {
+        imports {
+            mavenBom libs.spring.boot.starter.web.get().module.group + ':spring-boot-dependencies:' + libs.versions.springBoot.get()
+        }
+    }
+
+    dependencies {
+        // 테스트 공통 의존성 (Spring Boot BOM에서 버전 관리)
+        testImplementation platform(libs.junit.bom)
+        testImplementation libs.junit.jupiter
+        testRuntimeOnly libs.junit.platform.launcher
+        testImplementation libs.assertj.core
+        testImplementation libs.mockito.core
+        testImplementation libs.mockito.junit.jupiter
+    }
+
+    tasks.withType(Test).configureEach {
+        useJUnitPlatform()
+        finalizedBy jacocoTestReport
+    }
+
+    tasks.withType(JacocoReport).configureEach {
+        dependsOn test
+        reports {
+            xml.required = true
+            html.required = true
+        }
+    }
+
+    tasks.withType(JacocoCoverageVerification).configureEach {
+        violationRules {
+            rule {
+                limit {
+                    minimum = 0.95
+                }
+            }
+        }
+    }
+
+    // Javadoc 설정
+    tasks.withType(Javadoc).configureEach {
+        options {
+            addStringOption('Xdoclint:none', '-quiet')
+            encoding = 'UTF-8'
+            charSet = 'UTF-8'
+        }
+    }
+
+    // Maven Publishing 공통 설정
+    publishing {
+        publications {
+            maven(MavenPublication) {
+                from components.java
+
+                pom {
+                    url = 'https://github.com/ryu-qqq/observability-spring-boot-starter'
+
+                    licenses {
+                        license {
+                            name = 'MIT License'
+                            url = 'https://opensource.org/licenses/MIT'
+                        }
+                    }
+
+                    developers {
+                        developer {
+                            id = 'ryuqq'
+                            name = 'Sangwon Ryu'
+                        }
+                    }
+
+                    scm {
+                        connection = 'scm:git:git://github.com/ryu-qqq/observability-spring-boot-starter.git'
+                        developerConnection = 'scm:git:ssh://github.com/ryu-qqq/observability-spring-boot-starter.git'
+                        url = 'https://github.com/ryu-qqq/observability-spring-boot-starter'
+                    }
+                }
+            }
+        }
+    }
+}
+
+// 루트 프로젝트는 빌드하지 않음
+tasks.named('jar') {
+    enabled = false
+}
+
+tasks.findByName('javadocJar')?.enabled = false
+tasks.findByName('sourcesJar')?.enabled = false

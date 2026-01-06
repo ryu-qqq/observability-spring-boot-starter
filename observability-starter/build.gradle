@@ -1,0 +1,50 @@
+/**
+ * observability-starter
+ *
+ * Spring Boot Starter - 전체 통합 모듈 (bootstrap용)
+ * 모든 모듈을 포함하여 자동 설정 제공
+ *
+ * 사용자가 이 모듈만 의존하면 전체 기능 사용 가능
+ * 또는 필요한 모듈만 선택적으로 의존 가능
+ */
+
+description = 'Observability Spring Boot Starter - 전체 통합 (bootstrap용)'
+
+dependencies {
+    // 모든 모듈 포함
+    api project(':observability-core')
+    api project(':observability-logging')
+    api project(':observability-web')
+    api project(':observability-client')
+    api project(':observability-message')
+
+    // Spring Boot AutoConfiguration
+    implementation libs.spring.boot.autoconfigure
+    annotationProcessor libs.spring.boot.autoconfigure.processor
+    annotationProcessor libs.spring.boot.configuration.processor
+
+    // Spring Boot Web (기본 포함)
+    compileOnly libs.spring.boot.starter.web
+    compileOnly libs.spring.boot.starter.aop
+
+    // Logging
+    api libs.slf4j.api
+    compileOnly libs.logback.classic
+    compileOnly libs.logstash.logback.encoder
+
+    // Jackson
+    compileOnly libs.jackson.databind
+
+    // Optional dependencies (사용자 환경에 따라 활성화)
+    compileOnly libs.spring.cloud.aws.sqs
+    compileOnly libs.spring.boot.starter.data.redis
+    compileOnly libs.spring.webflux
+    compileOnly libs.spring.cloud.openfeign.core
+
+    // Test
+    testImplementation libs.spring.boot.starter.test
+    testImplementation libs.spring.boot.starter.web
+    testImplementation libs.spring.boot.starter.aop
+    testImplementation libs.logstash.logback.encoder
+    testRuntimeOnly libs.junit.platform.launcher
+}

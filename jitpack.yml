@@ -1,0 +1,5 @@
+jdk:
+  - openjdk21
+
+before_install:
+  - ./gradlew wrapper --gradle-version=8.12

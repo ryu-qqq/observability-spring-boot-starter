@@ -1,0 +1,44 @@
+/**
+ * observability-logging
+ *
+ * Application Layer용 로깅 모듈
+ * Spring Context 의존 (ApplicationEventPublisher 등)
+ *
+ * 포함 기능:
+ * - @LogEvent 어노테이션 (선택적)
+ * - Domain Event 자동 로깅
+ * - 구조화된 비즈니스 로깅
+ * - Logback 기본 설정
+ */
+
+description = 'Observability Logging - Application Layer용'
+
+dependencies {
+    // Core 모듈 의존
+    api project(':observability-core')
+
+    // Spring Context (ApplicationEvent 지원)
+    compileOnly libs.spring.context
+    compileOnly libs.spring.aop
+    compileOnly libs.spring.expression
+    compileOnly libs.aspectjweaver
+
+    // Logback 설정
+    compileOnly libs.logback.classic
+    compileOnly libs.logstash.logback.encoder
+
+    // Jackson (JSON 로깅)
+    compileOnly libs.jackson.databind
+
+    // Test
+    testImplementation libs.spring.context
+    testImplementation libs.spring.test
+    testImplementation libs.spring.aop
+    testImplementation libs.spring.expression
+    testImplementation libs.aspectjweaver
+    testImplementation libs.junit.jupiter
+    testImplementation libs.assertj.core
+    testImplementation libs.mockito.core
+    testImplementation libs.mockito.junit.jupiter
+    testImplementation libs.logback.classic
+}

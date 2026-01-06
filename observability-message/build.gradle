@@ -1,0 +1,43 @@
+/**
+ * observability-message
+ *
+ * 메시지 큐 로깅 모듈 (adapter-in/out 메시지용)
+ * SQS, Redis Pub/Sub, Redis Stream 지원
+ *
+ * 포함 기능:
+ * - SQS Listener AOP 로깅 (adapter-in)
+ * - SQS Template TraceId 전파 (adapter-out)
+ * - Redis MessageListener AOP 로깅 (adapter-in)
+ * - Redis Template TraceId 전파 (adapter-out)
+ * - 메시지 속성에서 TraceId 추출
+ */
+
+description = 'Observability Message - SQS/Redis (adapter-in/out 메시지용)'
+
+dependencies {
+    // Core 모듈 의존
+    api project(':observability-core')
+
+    // Spring AOP
+    compileOnly libs.spring.aop
+    compileOnly libs.aspectjweaver
+
+    // AWS SQS (Spring Cloud AWS) - 선택적
+    compileOnly libs.spring.cloud.aws.sqs
+
+    // Spring Data Redis - 선택적
+    compileOnly libs.spring.data.redis
+    compileOnly libs.spring.boot.starter.data.redis
+
+    // Spring Boot AutoConfiguration
+    compileOnly libs.spring.boot.autoconfigure
+    annotationProcessor libs.spring.boot.configuration.processor
+
+    // Test
+    testImplementation libs.spring.boot.starter.test
+    testImplementation libs.spring.boot.starter.aop
+    testImplementation libs.spring.data.redis
+    testImplementation libs.spring.cloud.aws.sqs
+    testImplementation libs.junit.jupiter
+    testImplementation libs.assertj.core
+}
