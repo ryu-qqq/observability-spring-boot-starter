@@ -1,8 +1,16 @@
 # Observability Spring Boot Starter
 
+[![](https://jitpack.io/v/ryu-qqq/observability-spring-boot-starter.svg)](https://jitpack.io/#ryu-qqq/observability-spring-boot-starter)
+
 Spring Boot 애플리케이션을 위한 경량 Observability SDK입니다.
 
-## 📋 특징
+## 📋 요구사항
+
+- **Java**: 21+
+- **Spring Boot**: 3.5.x+
+- **Gradle**: 8.x+ (권장)
+
+## ✨ 특징
 
 - **자동 TraceId 전파**: HTTP 요청 간 TraceId 자동 생성 및 전파
 - **Gateway 사용자 컨텍스트 지원**: X-User-Id, X-Tenant-Id, X-Organization-Id 자동 추출
@@ -16,15 +24,63 @@ Spring Boot 애플리케이션을 위한 경량 Observability SDK입니다.
 
 ### 1. 의존성 추가
 
-```kotlin
-// build.gradle.kts
+**Gradle (Groovy DSL)**
+```groovy
+// settings.gradle 또는 build.gradle
 repositories {
+    mavenCentral()
+    maven { url 'https://jitpack.io' }
+}
+
+// build.gradle
+dependencies {
+    implementation 'com.github.ryu-qqq:observability-spring-boot-starter:v1.0.0'
+}
+```
+
+**Gradle (Kotlin DSL)**
+```kotlin
+// settings.gradle.kts 또는 build.gradle.kts
+repositories {
+    mavenCentral()
     maven { url = uri("https://jitpack.io") }
 }
 
+// build.gradle.kts
 dependencies {
-    implementation("com.github.ryu-qqq:observability-spring-boot-starter:1.0.0")
+    implementation("com.github.ryu-qqq:observability-spring-boot-starter:v1.0.0")
 }
+```
+
+**Gradle Version Catalog (libs.versions.toml) - 권장**
+```toml
+[versions]
+observabilityStarter = "v1.0.0"
+
+[libraries]
+observability-starter = { module = "com.github.ryu-qqq:observability-spring-boot-starter", version.ref = "observabilityStarter" }
+```
+```groovy
+// build.gradle
+dependencies {
+    implementation libs.observability.starter
+}
+```
+
+**Maven**
+```xml
+<repositories>
+    <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+    </repository>
+</repositories>
+
+<dependency>
+    <groupId>com.github.ryu-qqq</groupId>
+    <artifactId>observability-spring-boot-starter</artifactId>
+    <version>v1.0.0</version>
+</dependency>
 ```
 
 ### 2. 설정 (선택사항)
@@ -315,32 +371,43 @@ implementation("net.logstash.logback:logstash-logback-encoder:8.0")
 ## 📁 프로젝트 구조
 
 ```
-src/main/java/com/ryuqq/observability/
-├── ObservabilityAutoConfiguration.java  # Spring Boot AutoConfiguration
-├── config/                              # 설정 클래스
-│   ├── ObservabilityProperties.java
-│   ├── TraceProperties.java
-│   ├── HttpLoggingProperties.java
-│   ├── MessageLoggingProperties.java
-│   └── MaskingProperties.java
-├── trace/                               # TraceId 및 사용자 컨텍스트
-│   ├── TraceIdFilter.java
-│   ├── TraceIdHolder.java
-│   ├── TraceIdHeaders.java
-│   └── TraceIdProvider.java
-├── logging/                             # 로깅
-│   ├── http/
-│   │   ├── HttpLoggingFilter.java
-│   │   └── PathNormalizer.java
-│   └── message/
-│       ├── MessageLoggingInterceptor.java
-│       ├── SqsMessageLoggingAspect.java
-│       └── RedisMessageLoggingAspect.java
-├── masking/                             # 민감정보 마스킹
-│   ├── LogMasker.java
-│   └── MaskingPatterns.java
-└── support/                             # 공통 유틸
-    └── LogConstants.java
+observability-spring-boot-starter/
+├── observability-core/          # 핵심 모듈 - TraceId, MDC, 마스킹
+│   └── trace/                   # TraceIdHolder, TraceIdProvider
+│   └── masking/                 # LogMasker, MaskingPatterns
+│   └── context/                 # RequestContext, UserContext
+│
+├── observability-logging/       # 로깅 모듈 - JSON 구조화 로깅
+│   └── config/                  # Logback 설정
+│   └── encoder/                 # JSON 인코더
+│
+├── observability-web/           # 웹 모듈 - HTTP 요청/응답 로깅
+│   └── filter/                  # TraceIdFilter, HttpLoggingFilter
+│   └── interceptor/             # RestTemplate/WebClient 인터셉터
+│
+├── observability-client/        # 클라이언트 모듈 - 외부 호출 로깅
+│   └── webclient/               # WebClient TraceId 전파
+│   └── feign/                   # Feign Client TraceId 전파
+│
+├── observability-message/       # 메시지 모듈 - SQS/Redis 로깅
+│   └── sqs/                     # SQS Listener AOP 로깅
+│   └── redis/                   # Redis MessageListener 로깅
+│
+└── observability-starter/       # 통합 스타터 (이 모듈만 의존하면 전체 기능 사용)
+    └── autoconfigure/           # Spring Boot AutoConfiguration
+```
+
+### 선택적 의존성
+
+전체 기능이 필요하지 않다면 개별 모듈만 사용할 수 있습니다:
+
+```groovy
+// 전체 기능 (권장)
+implementation 'com.github.ryu-qqq:observability-spring-boot-starter:v1.0.0'
+
+// 또는 필요한 모듈만 선택
+implementation 'com.github.ryu-qqq.observability-spring-boot-starter:observability-core:v1.0.0'
+implementation 'com.github.ryu-qqq.observability-spring-boot-starter:observability-web:v1.0.0'
 ```
 
 ## 📜 라이선스
