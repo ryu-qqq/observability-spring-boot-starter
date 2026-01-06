@@ -15,6 +15,8 @@ Spring Boot 애플리케이션을 위한 경량 Observability SDK입니다.
 - **자동 TraceId 전파**: HTTP 요청 간 TraceId 자동 생성 및 전파
 - **Gateway 사용자 컨텍스트 지원**: X-User-Id, X-Tenant-Id, X-Organization-Id 자동 추출
 - **HTTP 자동 로깅**: 요청/응답 자동 로깅 (Body 포함 선택)
+- **WebFlux/Netty 지원**: Spring WebFlux, Spring Cloud Gateway 환경 지원 (v1.1.0+)
+- **Reactor Context ↔ MDC 전파**: 리액티브 스트림에서 자동 MDC 전파
 - **메시지 큐 자동 로깅**: SQS, Redis 리스너 자동 로깅
 - **민감정보 마스킹**: 비밀번호, 카드번호 등 자동 마스킹
 - **JSON 구조화 로깅**: ELK/CloudWatch 연동에 최적화
@@ -34,7 +36,7 @@ repositories {
 
 // build.gradle
 dependencies {
-    implementation 'com.github.ryu-qqq:observability-spring-boot-starter:v1.0.0'
+    implementation 'com.github.ryu-qqq:observability-spring-boot-starter:v1.1.0'
 }
 ```
 
@@ -48,14 +50,14 @@ repositories {
 
 // build.gradle.kts
 dependencies {
-    implementation("com.github.ryu-qqq:observability-spring-boot-starter:v1.0.0")
+    implementation("com.github.ryu-qqq:observability-spring-boot-starter:v1.1.0")
 }
 ```
 
 **Gradle Version Catalog (libs.versions.toml) - 권장**
 ```toml
 [versions]
-observabilityStarter = "v1.0.0"
+observabilityStarter = "v1.1.0"
 
 [libraries]
 observability-starter = { module = "com.github.ryu-qqq:observability-spring-boot-starter", version.ref = "observabilityStarter" }
@@ -79,7 +81,7 @@ dependencies {
 <dependency>
     <groupId>com.github.ryu-qqq</groupId>
     <artifactId>observability-spring-boot-starter</artifactId>
-    <version>v1.0.0</version>
+    <version>v1.1.0</version>
 </dependency>
 ```
 
@@ -194,6 +196,74 @@ String organizationId = TraceIdHolder.getOrganizationId();
 |------|--------|------|
 | `observability.masking.enabled` | `true` | 마스킹 활성화 |
 | `observability.masking.mask-fields` | `[]` | 마스킹할 JSON 필드명 |
+
+## 🌊 WebFlux/Netty 지원 (v1.1.0+)
+
+### Spring WebFlux 환경
+
+Spring WebFlux, Spring Cloud Gateway 등 리액티브 환경에서 자동으로 TraceId가 전파됩니다.
+
+**지원 환경:**
+- Spring WebFlux (Netty)
+- Spring Cloud Gateway
+- Reactor Netty 기반 애플리케이션
+
+**WebFlux 설정 (선택사항)**
+```yaml
+observability:
+  reactive-trace:
+    enabled: true
+    generate-if-missing: true
+    include-in-response: true
+    response-header-name: X-Trace-Id
+```
+
+### 자동 MDC 전파
+
+WebFlux 환경에서는 스레드가 계속 변경되기 때문에 ThreadLocal 기반의 MDC가 자동 전파되지 않습니다.
+SDK는 Reactor Context와 MDC를 자동으로 동기화하여 로깅이 올바르게 동작하도록 합니다.
+
+```java
+// WebFlux Controller에서도 TraceId 자동 설정
+@RestController
+public class OrderController {
+
+    @GetMapping("/orders/{id}")
+    public Mono<Order> getOrder(@PathVariable String id) {
+        // 로그에 자동으로 TraceId 포함
+        log.info("Fetching order: {}", id);
+        return orderService.findById(id);
+    }
+}
+```
+
+### Spring Cloud Gateway 연동
+
+Gateway에서 생성한 TraceId가 downstream 서비스로 자동 전파됩니다.
+
+```java
+// Gateway에서 TraceId 설정
+// observability-starter가 자동으로 처리 (추가 설정 불필요)
+```
+
+### 커스텀 Reactive TraceId Provider
+
+```java
+@Bean
+public ReactiveTraceIdProvider customReactiveTraceIdProvider() {
+    return new ReactiveTraceIdProvider() {
+        @Override
+        public String generate() {
+            return "gateway-" + UUID.randomUUID();
+        }
+        @Override
+        public String extractFromExchange(ServerWebExchange exchange) {
+            return exchange.getRequest().getHeaders()
+                .getFirst("X-Custom-Trace");
+        }
+    };
+}
+```
 
 ## 📨 메시지 큐 로깅
 
@@ -381,9 +451,13 @@ observability-spring-boot-starter/
 │   └── config/                  # Logback 설정
 │   └── encoder/                 # JSON 인코더
 │
-├── observability-web/           # 웹 모듈 - HTTP 요청/응답 로깅
+├── observability-web/           # 웹 모듈 - HTTP 요청/응답 로깅 (Servlet)
 │   └── filter/                  # TraceIdFilter, HttpLoggingFilter
 │   └── interceptor/             # RestTemplate/WebClient 인터셉터
+│
+├── observability-webflux/       # 웹플럭스 모듈 - Reactive HTTP (WebFlux/Netty)
+│   └── trace/                   # ReactiveTraceIdFilter (WebFilter)
+│   └── context/                 # MdcContextLifter (Reactor Context ↔ MDC)
 │
 ├── observability-client/        # 클라이언트 모듈 - 외부 호출 로깅
 │   └── webclient/               # WebClient TraceId 전파
@@ -403,11 +477,12 @@ observability-spring-boot-starter/
 
 ```groovy
 // 전체 기능 (권장)
-implementation 'com.github.ryu-qqq:observability-spring-boot-starter:v1.0.0'
+implementation 'com.github.ryu-qqq:observability-spring-boot-starter:v1.1.0'
 
 // 또는 필요한 모듈만 선택
-implementation 'com.github.ryu-qqq.observability-spring-boot-starter:observability-core:v1.0.0'
-implementation 'com.github.ryu-qqq.observability-spring-boot-starter:observability-web:v1.0.0'
+implementation 'com.github.ryu-qqq.observability-spring-boot-starter:observability-core:v1.1.0'
+implementation 'com.github.ryu-qqq.observability-spring-boot-starter:observability-web:v1.1.0'
+implementation 'com.github.ryu-qqq.observability-spring-boot-starter:observability-webflux:v1.1.0'  // WebFlux/Netty 환경
 ```
 
 ## 📜 라이선스

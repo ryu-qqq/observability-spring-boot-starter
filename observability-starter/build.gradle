@@ -15,6 +15,7 @@ dependencies {
     api project(':observability-core')
     api project(':observability-logging')
     api project(':observability-web')
+    api project(':observability-webflux')  // WebFlux/Netty 지원
     api project(':observability-client')
     api project(':observability-message')
 

@@ -1,0 +1,35 @@
+/**
+ * observability-webflux
+ *
+ * Reactive HTTP 진입점용 모듈 (Spring WebFlux/Netty용)
+ * Spring WebFlux + Project Reactor 의존
+ *
+ * 포함 기능:
+ * - ReactiveTraceIdFilter (WebFilter - TraceId 추출/생성)
+ * - MdcContextLifter (Reactor Context ↔ MDC 전파)
+ * - Gateway 헤더 처리 (X-User-Id, X-Tenant-Id 등)
+ */
+
+description = 'Observability WebFlux - Reactive HTTP Entry Point (Spring WebFlux/Netty용)'
+
+dependencies {
+    // Core 모듈 의존
+    api project(':observability-core')
+
+    // Spring WebFlux
+    compileOnly libs.spring.webflux
+
+    // Project Reactor
+    compileOnly libs.reactor.core
+
+    // Spring Boot AutoConfiguration (선택적)
+    compileOnly libs.spring.boot.autoconfigure
+    annotationProcessor libs.spring.boot.configuration.processor
+
+    // Test
+    testImplementation libs.spring.boot.starter.test
+    testImplementation libs.spring.webflux
+    testImplementation libs.reactor.core
+    testImplementation libs.junit.jupiter
+    testImplementation libs.assertj.core
+}

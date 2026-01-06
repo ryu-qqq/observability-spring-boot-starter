@@ -9,6 +9,9 @@ include 'observability-logging'
 // Web module - HTTP Entry Point (adapter-in REST API용)
 include 'observability-web'
 
+// WebFlux module - Reactive HTTP Entry Point (Spring WebFlux/Netty용)
+include 'observability-webflux'
+
 // Client module - HTTP Client TraceId 전파 (adapter-out HTTP용)
 include 'observability-client'
 
