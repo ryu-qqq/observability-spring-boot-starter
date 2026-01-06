@@ -88,6 +88,16 @@ subprojects {
             maven(MavenPublication) {
                 from components.java
 
+                // BOM에서 관리되는 버전을 resolved 버전으로 publish
+                versionMapping {
+                    usage('java-api') {
+                        fromResolutionOf('runtimeClasspath')
+                    }
+                    usage('java-runtime') {
+                        fromResolutionResult()
+                    }
+                }
+
                 pom {
                     url = 'https://github.com/ryu-qqq/observability-spring-boot-starter'
 
