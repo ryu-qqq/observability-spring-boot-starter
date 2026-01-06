@@ -73,7 +73,8 @@ public class ReactiveTraceIdFilter implements WebFilter, Ordered {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         return resolveTraceId(exchange)
-                .flatMap(traceId -> processRequest(exchange, chain, traceId));
+                .flatMap(traceId -> processRequest(exchange, chain, traceId))
+                .switchIfEmpty(chain.filter(exchange));  // traceId가 없어도 체인 진행
     }
 
     /**
