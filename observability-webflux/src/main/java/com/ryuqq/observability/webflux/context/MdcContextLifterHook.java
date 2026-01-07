@@ -2,6 +2,7 @@ package com.ryuqq.observability.webflux.context;
 
 import org.reactivestreams.Publisher;
 import reactor.core.CoreSubscriber;
+import reactor.core.Fuseable;
 import reactor.core.publisher.Hooks;
 import reactor.core.publisher.Operators;
 
@@ -12,6 +13,9 @@ import java.util.function.Function;
  *
  * <p>Spring Boot 애플리케이션 시작 시 이 클래스의 {@link #install()} 메서드를
  * 호출하면 모든 Reactor 연산에서 자동으로 MDC 컨텍스트가 전파됩니다.</p>
+ *
+ * <p><b>중요:</b> Fuseable.ConditionalSubscriber를 감지하여 적절한 lifter를 사용합니다.
+ * 이는 Reactor의 Fusion 최적화를 유지하고 Netty ByteBuf 메모리 누수를 방지합니다.</p>
  *
  * <pre>
  * {@code
@@ -46,9 +50,21 @@ public final class MdcContextLifterHook {
 
     /**
      * Operators.lift()를 통해 MdcContextLifter를 적용하는 Function을 반환합니다.
+     *
+     * <p>Fuseable.ConditionalSubscriber인 경우 MdcContextLifter.Conditional을 사용하여
+     * Reactor의 Fusion 최적화를 유지합니다.</p>
      */
     @SuppressWarnings("unchecked")
     private static <T> Function<? super Publisher<T>, ? extends Publisher<T>> liftFunction() {
-        return Operators.lift((scannable, subscriber) -> new MdcContextLifter<>((CoreSubscriber<T>) subscriber));
+        return Operators.lift((scannable, subscriber) -> {
+            // ConditionalSubscriber인 경우 Conditional lifter 사용
+            if (subscriber instanceof Fuseable.ConditionalSubscriber) {
+                return new MdcContextLifter.Conditional<>(
+                        (Fuseable.ConditionalSubscriber<T>) subscriber
+                );
+            }
+            // 일반 CoreSubscriber인 경우
+            return new MdcContextLifter<>((CoreSubscriber<T>) subscriber);
+        });
     }
 }
