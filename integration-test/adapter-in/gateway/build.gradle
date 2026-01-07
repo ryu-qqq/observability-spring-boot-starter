@@ -1,0 +1,50 @@
+/**
+ * integration-test:adapter-in:gateway
+ *
+ * Spring WebFlux/Gateway 기반 통합 테스트 모듈
+ * observability-webflux 모듈의 통합 테스트
+ *
+ * 테스트 항목:
+ * - ReactiveTraceIdFilter 동작 검증
+ * - MdcContextLifter Reactor Context -> MDC 전파 검증
+ * - ByteBuf 메모리 누수 검증
+ * - beforeCommit 콜백 동작 검증 (ReadOnlyHttpHeaders 예외 방지)
+ */
+
+description = 'Integration Test - Adapter In Gateway (Spring WebFlux)'
+
+// 통합 테스트 모듈은 publish하지 않음
+tasks.named('jar') { enabled = false }
+tasks.named('javadocJar') { enabled = false }
+tasks.named('sourcesJar') { enabled = false }
+tasks.named('publishMavenPublicationToMavenLocal') { enabled = false }
+
+dependencies {
+    // 테스트 대상 모듈
+    testImplementation project(':observability-core')
+    testImplementation project(':observability-webflux')
+    testImplementation project(':observability-logging')
+
+    // Spring WebFlux Test
+    testImplementation libs.spring.boot.starter.test
+    testImplementation libs.spring.boot.starter.webflux
+
+    // Reactor Test
+    testImplementation libs.reactor.test
+
+    // WebTestClient
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+tasks.withType(JavaCompile) {
+    options.compilerArgs << '-parameters'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+        showStandardStreams = true
+    }
+}

@@ -20,3 +20,16 @@ include 'observability-message'
 
 // Spring Boot Starter - 전체 통합 (bootstrap용)
 include 'observability-starter'
+
+// ========================================
+// Integration Test Modules (publish 대상 아님)
+// ========================================
+
+// Adapter-In: REST API (Spring MVC)
+include 'integration-test:adapter-in:rest-api'
+
+// Adapter-In: Gateway (Spring WebFlux)
+include 'integration-test:adapter-in:gateway'
+
+// Adapter-Out: HTTP Client (RestTemplate, WebClient)
+include 'integration-test:adapter-out'

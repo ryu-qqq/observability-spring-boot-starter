@@ -1,1 +1,2 @@
 com.ryuqq.observability.webflux.config.WebFluxTraceAutoConfiguration
+com.ryuqq.observability.webflux.config.WebFluxHttpLoggingAutoConfiguration

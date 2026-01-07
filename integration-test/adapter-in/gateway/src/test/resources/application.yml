@@ -1,0 +1,45 @@
+spring:
+  application:
+    name: test-gateway
+  main:
+    web-application-type: reactive
+
+# Observability 설정
+observability:
+  # Trace ID 설정
+  reactive-trace:
+    enabled: true
+    generate-if-missing: true
+    include-in-response: true
+    response-header-name: X-Trace-Id
+
+  # HTTP 로깅 설정
+  reactive-http:
+    enabled: true
+    log-request-body: true
+    log-response-body: true
+    max-body-length: 2000
+    slow-request-threshold-ms: 3000
+    exclude-paths:
+      - /actuator/**
+      - /health
+      - /favicon.ico
+    exclude-headers:
+      - Authorization
+      - Cookie
+      - X-Api-Key
+
+  # 민감정보 마스킹 설정
+  masking:
+    enabled: true
+    mask-fields:
+      - password
+      - secret
+      - apiKey
+
+# 로깅 설정 (테스트용)
+logging:
+  level:
+    com.ryuqq.observability: DEBUG
+    observability.http: DEBUG
+    reactor.netty: WARN

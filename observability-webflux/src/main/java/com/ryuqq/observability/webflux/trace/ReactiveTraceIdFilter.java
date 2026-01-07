@@ -74,7 +74,7 @@ public class ReactiveTraceIdFilter implements WebFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         return resolveTraceId(exchange)
                 .flatMap(traceId -> processRequest(exchange, chain, traceId))
-                .switchIfEmpty(chain.filter(exchange));  // traceId가 없어도 체인 진행
+                .switchIfEmpty(Mono.defer(() -> chain.filter(exchange)));  // traceId가 없어도 체인 진행
     }
 
     /**
@@ -166,8 +166,8 @@ public class ReactiveTraceIdFilter implements WebFilter, Ordered {
     /**
      * 응답 헤더에 TraceId를 안전하게 추가합니다.
      *
-     * <p>beforeCommit 콜백을 사용하여 응답이 커밋되기 직전에 헤더를 추가합니다.
-     * 이미 커밋된 응답(예: Actuator 엔드포인트)에 대해서는 헤더 추가를 건너뜁니다.</p>
+     * <p>응답 헤더가 아직 쓰기 가능한 상태일 때 직접 추가합니다.
+     * 이미 읽기 전용인 경우(예: 일부 특수 응답)에는 무시합니다.</p>
      *
      * @param response 응답 객체
      * @param traceId 추가할 TraceId
@@ -175,20 +175,14 @@ public class ReactiveTraceIdFilter implements WebFilter, Ordered {
     private void addTraceIdToResponse(ServerHttpResponse response, String traceId) {
         String headerName = properties.getResponseHeaderName();
 
-        response.beforeCommit(() -> {
-            try {
-                // 이미 커밋되었거나 헤더가 읽기 전용인 경우 건너뜀
-                if (!response.isCommitted()) {
-                    HttpHeaders headers = response.getHeaders();
-                    if (!headers.containsKey(headerName)) {
-                        headers.add(headerName, traceId);
-                    }
-                }
-            } catch (UnsupportedOperationException e) {
-                // ReadOnlyHttpHeaders인 경우 무시 (이미 커밋된 응답)
-                log.trace("Cannot add TraceId header to already committed response");
+        try {
+            HttpHeaders headers = response.getHeaders();
+            if (!headers.containsKey(headerName)) {
+                headers.set(headerName, traceId);
             }
-            return Mono.empty();
-        });
+        } catch (UnsupportedOperationException e) {
+            // ReadOnlyHttpHeaders인 경우 무시 (이미 특수 처리된 응답)
+            log.trace("Cannot add TraceId header: response headers are read-only");
+        }
     }
 }

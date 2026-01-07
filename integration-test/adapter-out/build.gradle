@@ -1,0 +1,46 @@
+/**
+ * integration-test:adapter-out
+ *
+ * HTTP Client TraceId 전파 통합 테스트 모듈
+ * observability-client 모듈의 통합 테스트
+ *
+ * 테스트 항목:
+ * - RestTemplate TraceId 헤더 전파 검증
+ * - WebClient TraceId 헤더 전파 검증
+ * - Feign Client TraceId 헤더 전파 검증 (optional)
+ */
+
+description = 'Integration Test - Adapter Out HTTP Client'
+
+// 통합 테스트 모듈은 publish하지 않음
+tasks.named('jar') { enabled = false }
+tasks.named('javadocJar') { enabled = false }
+tasks.named('sourcesJar') { enabled = false }
+tasks.named('publishMavenPublicationToMavenLocal') { enabled = false }
+
+dependencies {
+    // 테스트 대상 모듈
+    testImplementation project(':observability-core')
+    testImplementation project(':observability-client')
+    testImplementation project(':observability-logging')
+
+    // Spring Boot Test
+    testImplementation libs.spring.boot.starter.test
+    testImplementation libs.spring.boot.starter.web
+    testImplementation libs.spring.boot.starter.webflux
+
+    // Reactor Test (WebClient 테스트용)
+    testImplementation libs.reactor.test
+
+    // MockWebServer (외부 API Mock)
+    testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+        showStandardStreams = true
+    }
+}

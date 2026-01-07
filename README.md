@@ -153,49 +153,134 @@ String organizationId = TraceIdHolder.getOrganizationId();
 
 ## ⚙️ 설정 옵션
 
-### 기본 설정
+### 전체 설정 레퍼런스
 
-| 속성 | 기본값 | 설명 |
-|------|--------|------|
-| `observability.enabled` | `true` | SDK 전체 활성화 |
-| `observability.service-name` | `unknown` | 서비스 이름 |
-| `observability.environment` | `local` | 환경 (local/dev/prod) |
+```yaml
+observability:
+  # ─────────────────────────────────────────────
+  # 기본 설정
+  # ─────────────────────────────────────────────
+  service-name: my-service              # 서비스 이름 (기본: unknown)
 
-### TraceId 설정
+  # ─────────────────────────────────────────────
+  # TraceId 설정 (Spring MVC)
+  # ─────────────────────────────────────────────
+  trace:
+    enabled: true                       # TraceId 기능 활성화
+    header-names:                       # TraceId 추출 헤더 (우선순위 순)
+      - X-Trace-Id
+      - X-Request-Id
+      - traceparent                     # W3C Trace Context
+      - X-Amzn-Trace-Id                 # AWS X-Ray
+    include-in-response: true           # 응답 헤더에 TraceId 포함
+    generate-if-missing: true           # 요청에 없으면 자동 생성
+    response-header-name: X-Trace-Id    # 응답 헤더 이름
 
-| 속성 | 기본값 | 설명 |
-|------|--------|------|
-| `observability.trace.enabled` | `true` | TraceId 필터 활성화 |
-| `observability.trace.include-in-response` | `true` | 응답 헤더에 TraceId 포함 |
-| `observability.trace.header-names` | `[X-Trace-Id, X-Request-Id, traceparent, X-Amzn-Trace-Id]` | TraceId 추출 헤더 (우선순위 순) |
-| `observability.trace.response-header-name` | `X-Trace-Id` | 응답 헤더명 |
+  # ─────────────────────────────────────────────
+  # Reactive TraceId 설정 (WebFlux/Netty)
+  # ─────────────────────────────────────────────
+  reactive-trace:
+    enabled: true
+    generate-if-missing: true
+    include-in-response: true
+    response-header-name: X-Trace-Id
 
-### HTTP 로깅 설정
+  # ─────────────────────────────────────────────
+  # HTTP 로깅 설정
+  # ─────────────────────────────────────────────
+  http:
+    enabled: true
+    log-request-body: false             # 요청 본문 로깅 (⚠️ 민감정보 주의)
+    log-response-body: false            # 응답 본문 로깅
+    max-body-length: 1000               # 본문 최대 길이
+    slow-request-threshold-ms: 3000     # 느린 요청 임계값 (ms)
+    exclude-paths:                      # 로깅 제외 경로 (Ant 패턴)
+      - /actuator/**
+      - /health
+      - /health/**
+      - /favicon.ico
+      - /swagger-ui/**
+      - /v3/api-docs/**
+    exclude-headers:                    # 로깅 제외 헤더
+      - Authorization
+      - Cookie
+      - Set-Cookie
+      - X-Api-Key
+      - Api-Key
+    path-patterns:                      # 경로 정규화 패턴
+      - pattern: "/users/\\d+"
+        replacement: "/users/{id}"
 
-| 속성 | 기본값 | 설명 |
-|------|--------|------|
-| `observability.http.enabled` | `true` | HTTP 로깅 활성화 |
-| `observability.http.log-request-body` | `false` | 요청 본문 로깅 |
-| `observability.http.log-response-body` | `false` | 응답 본문 로깅 |
-| `observability.http.max-body-length` | `2000` | 본문 최대 길이 |
-| `observability.http.slow-request-threshold-ms` | `3000` | 느린 요청 기준 (ms) |
-| `observability.http.exclude-paths` | `[]` | 로깅 제외 경로 |
-| `observability.http.exclude-headers` | `[Authorization, Cookie]` | 로깅 제외 헤더 |
+  # ─────────────────────────────────────────────
+  # 메시지 큐 로깅 설정 (SQS, Kafka 등)
+  # ─────────────────────────────────────────────
+  message:
+    enabled: true
+    log-payload: false                  # 페이로드 로깅 (⚠️ 민감정보 주의)
+    max-payload-length: 500             # 페이로드 최대 길이
 
-### 메시지 로깅 설정 (SQS, Redis)
+  # ─────────────────────────────────────────────
+  # 비즈니스 로깅 설정 (@Loggable, @BusinessLog)
+  # ─────────────────────────────────────────────
+  logging:
+    business:
+      enabled: true
+      log-arguments: false              # 메서드 인자 로깅
+      log-result: false                 # 메서드 결과 로깅
+      log-execution-time: true          # 실행 시간 로깅
+      slow-execution-threshold: 1000    # 느린 실행 임계값 (ms)
 
-| 속성 | 기본값 | 설명 |
-|------|--------|------|
-| `observability.message.enabled` | `true` | 메시지 로깅 활성화 |
-| `observability.message.log-payload` | `false` | 페이로드 로깅 |
-| `observability.message.max-payload-length` | `500` | 페이로드 최대 길이 |
+  # ─────────────────────────────────────────────
+  # 민감정보 마스킹 설정
+  # ─────────────────────────────────────────────
+  masking:
+    enabled: true
+    mask-fields:                        # 마스킹할 필드명 (JSON 키)
+      - password
+      - passwd
+      - secret
+      - token
+      - apiKey
+      - api_key
+      - accessToken
+      - access_token
+      - refreshToken
+      - refresh_token
+      - creditCard
+      - credit_card
+      - cardNumber
+      - card_number
+      - ssn
+      - socialSecurityNumber
+    patterns:                           # 커스텀 마스킹 패턴
+      - name: credit-card
+        pattern: "\\d{4}-\\d{4}-\\d{4}-\\d{4}"
+        replacement: "****-****-****-****"
+```
 
-### 마스킹 설정
+### 설정 옵션 요약
 
-| 속성 | 기본값 | 설명 |
-|------|--------|------|
-| `observability.masking.enabled` | `true` | 마스킹 활성화 |
-| `observability.masking.mask-fields` | `[]` | 마스킹할 JSON 필드명 |
+| Prefix | 용도 | 주요 옵션 |
+|--------|------|----------|
+| `observability` | 기본 설정 | `service-name` |
+| `observability.trace` | TraceId (MVC) | `enabled`, `header-names`, `include-in-response` |
+| `observability.reactive-trace` | TraceId (WebFlux) | `enabled`, `generate-if-missing` |
+| `observability.http` | HTTP 로깅 | `exclude-paths`, `slow-request-threshold-ms` |
+| `observability.message` | 메시지 로깅 | `log-payload`, `max-payload-length` |
+| `observability.logging.business` | 비즈니스 로깅 | `log-arguments`, `log-result`, `slow-execution-threshold` |
+| `observability.masking` | 마스킹 | `mask-fields`, `patterns` |
+
+### 기본 마스킹 필드
+
+SDK는 다음 필드명을 기본으로 마스킹합니다:
+
+```
+password, passwd, secret, token, apiKey, api_key,
+accessToken, access_token, refreshToken, refresh_token,
+creditCard, credit_card, cardNumber, card_number, ssn, socialSecurityNumber
+```
+
+추가 필드가 필요하면 `mask-fields`에 추가하세요.
 
 ## 🌊 WebFlux/Netty 지원 (v1.1.0+)
 

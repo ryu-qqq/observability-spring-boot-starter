@@ -91,6 +91,15 @@ public final class TraceIdHolder {
         }
     }
 
+    /**
+     * 현재 서비스 이름을 반환합니다.
+     *
+     * @return 서비스 이름, 없으면 null
+     */
+    public static String getServiceName() {
+        return MDC.get(TraceIdHeaders.MDC_SERVICE_NAME);
+    }
+
     // ==================== User Context 관리 ====================
 
     /**
