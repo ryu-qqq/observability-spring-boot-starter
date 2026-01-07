@@ -26,7 +26,11 @@ import java.util.Optional;
  * 리소스 정리가 올바르게 동작하도록 합니다. 이는 Netty ByteBuf 메모리 누수를 방지합니다.</p>
  *
  * @param <T> 구독 데이터 타입
+ * @deprecated Micrometer Context Propagation으로 대체되었습니다.
+ *             이 클래스는 Netty ByteBuf 메모리 누수와 Prometheus/Actuator 엔드포인트 문제를 야기할 수 있습니다.
+ * @see com.ryuqq.observability.webflux.context.propagation.ContextPropagationConfiguration
  */
+@Deprecated(since = "1.3.0", forRemoval = true)
 public class MdcContextLifter<T> implements CoreSubscriber<T>, Scannable {
 
     private static final Logger log = LoggerFactory.getLogger(MdcContextLifter.class);

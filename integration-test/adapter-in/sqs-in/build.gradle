@@ -32,9 +32,7 @@ dependencies {
     testImplementation 'io.awspring.cloud:spring-cloud-aws-starter-sqs:3.3.0'
 
     // Testcontainers for LocalStack
-    testImplementation 'org.testcontainers:testcontainers:1.20.4'
-    testImplementation 'org.testcontainers:localstack:1.20.4'
-    testImplementation 'org.testcontainers:junit-jupiter:1.20.4'
+    testImplementation libs.bundles.testcontainers.sqs
 }
 
 tasks.named('test') {

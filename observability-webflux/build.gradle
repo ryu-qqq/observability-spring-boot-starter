@@ -22,6 +22,9 @@ dependencies {
     // Project Reactor
     compileOnly libs.reactor.core
 
+    // Micrometer Context Propagation (Reactor Context ↔ ThreadLocal 자동 동기화)
+    api libs.micrometer.context.propagation
+
     // Spring Boot AutoConfiguration (선택적)
     compileOnly libs.spring.boot.autoconfigure
     annotationProcessor libs.spring.boot.configuration.processor

@@ -18,6 +18,8 @@ springDependencyManagement = "1.1.7"
 junitBom = "5.10.3"
 assertj = "3.25.3"
 mockito = "5.11.0"
+testcontainers = "1.20.4"
+awaitility = "4.2.2"
 
 # ========================================
 # Logging
@@ -29,6 +31,11 @@ logstashLogback = "8.0"
 # ========================================
 feignCore = "13.5"
 springCloudOpenfeign = "4.2.1"
+
+# ========================================
+# Context Propagation
+# ========================================
+micrometerContextPropagation = "1.1.1"
 
 # ========================================
 # Messaging
@@ -89,6 +96,7 @@ feign-core = { module = "io.github.openfeign:feign-core", version.ref = "feignCo
 spring-cloud-openfeign-core = { module = "org.springframework.cloud:spring-cloud-openfeign-core", version.ref = "springCloudOpenfeign" }
 reactor-core = { module = "io.projectreactor:reactor-core" }
 reactor-test = { module = "io.projectreactor:reactor-test" }
+micrometer-context-propagation = { module = "io.micrometer:context-propagation", version.ref = "micrometerContextPropagation" }
 
 # ========================================
 # Messaging
@@ -104,6 +112,14 @@ junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher
 assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj" }
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 mockito-junit-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
+awaitility = { module = "org.awaitility:awaitility", version.ref = "awaitility" }
+
+# ========================================
+# Testcontainers
+# ========================================
+testcontainers-core = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
+testcontainers-junit = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
+testcontainers-localstack = { module = "org.testcontainers:localstack", version.ref = "testcontainers" }
 
 [bundles]
 # ========================================
@@ -114,6 +130,22 @@ testing-basic = [
     "assertj-core",
     "mockito-core",
     "mockito-junit-jupiter"
+]
+
+# ========================================
+# Testcontainers Bundle
+# ========================================
+testcontainers-sqs = [
+    "testcontainers-core",
+    "testcontainers-junit",
+    "testcontainers-localstack",
+    "awaitility"
+]
+
+testcontainers-redis = [
+    "testcontainers-core",
+    "testcontainers-junit",
+    "awaitility"
 ]
 
 [plugins]

@@ -25,7 +25,13 @@ import java.util.function.Function;
  * }
  * }
  * </pre>
+ *
+ * @deprecated Micrometer Context Propagation으로 대체되었습니다.
+ *             {@link com.ryuqq.observability.webflux.context.propagation.ContextPropagationConfiguration}을 사용하세요.
+ *             이 클래스는 Netty ByteBuf 메모리 누수와 Prometheus/Actuator 엔드포인트 문제를 야기할 수 있습니다.
+ * @see com.ryuqq.observability.webflux.context.propagation.ContextPropagationConfiguration
  */
+@Deprecated(since = "1.3.0", forRemoval = true)
 public final class MdcContextLifterHook {
 
     private static final String HOOK_KEY = "mdcContextLifter";
@@ -33,17 +39,28 @@ public final class MdcContextLifterHook {
     private MdcContextLifterHook() {
     }
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(MdcContextLifterHook.class);
+
     /**
      * MdcContextLifter Hook을 전역으로 설치합니다.
      * 이미 설치된 경우 무시됩니다.
+     *
+     * @deprecated since 1.3.0. Use {@link com.ryuqq.observability.webflux.context.propagation.ContextPropagationConfiguration#install()} instead.
      */
+    @Deprecated(since = "1.3.0", forRemoval = true)
     public static void install() {
+        log.warn("MdcContextLifterHook is deprecated since 1.3.0 and will be removed in a future version. " +
+                "This can cause Netty ByteBuf memory leaks and Prometheus/Actuator endpoint issues. " +
+                "Use ContextPropagationConfiguration.install() instead, which is now automatically configured.");
         Hooks.onEachOperator(HOOK_KEY, liftFunction());
     }
 
     /**
      * MdcContextLifter Hook을 제거합니다.
+     *
+     * @deprecated since 1.3.0. Use {@link com.ryuqq.observability.webflux.context.propagation.ContextPropagationConfiguration#uninstall()} instead.
      */
+    @Deprecated(since = "1.3.0", forRemoval = true)
     public static void uninstall() {
         Hooks.resetOnEachOperator(HOOK_KEY);
     }

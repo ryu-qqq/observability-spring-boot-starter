@@ -1,6 +1,6 @@
 package com.ryuqq.observability.webflux.config;
 
-import com.ryuqq.observability.webflux.context.MdcContextLifterHook;
+import com.ryuqq.observability.webflux.context.propagation.ContextPropagationConfiguration;
 import com.ryuqq.observability.webflux.trace.DefaultReactiveTraceIdProvider;
 import com.ryuqq.observability.webflux.trace.ReactiveTraceIdFilter;
 import com.ryuqq.observability.webflux.trace.ReactiveTraceIdProvider;
@@ -25,8 +25,15 @@ import org.springframework.web.server.WebFilter;
  * <p>Spring WebFlux 환경에서만 활성화되며, 다음 기능을 제공합니다:</p>
  * <ul>
  *   <li>ReactiveTraceIdFilter - TraceId 추출/생성 WebFilter</li>
- *   <li>MdcContextLifterHook - Reactor Context ↔ MDC 전파</li>
+ *   <li>Micrometer Context Propagation - Reactor Context ↔ MDC 전파</li>
  *   <li>ReactiveTraceIdProvider - TraceId 생성/추출 전략</li>
+ * </ul>
+ *
+ * <p>Micrometer Context Propagation을 사용하여 다음 문제를 해결합니다:</p>
+ * <ul>
+ *   <li>Netty ByteBuf Fusion 최적화와의 충돌 방지</li>
+ *   <li>메모리 누수 방지</li>
+ *   <li>Prometheus/Actuator 스트리밍 엔드포인트 호환성</li>
  * </ul>
  *
  * <p>설정 예시:</p>
@@ -72,21 +79,19 @@ public class WebFluxTraceAutoConfiguration implements InitializingBean, Disposab
     }
 
     /**
-     * MdcContextLifterHook을 설치합니다.
-     * 모든 Reactor 연산에서 자동으로 MDC 컨텍스트가 전파됩니다.
+     * Micrometer Context Propagation을 설치합니다.
+     * Reactor Context와 ThreadLocal(MDC) 간 자동 동기화를 활성화합니다.
      */
     @Override
     public void afterPropertiesSet() {
-        log.info("Installing MdcContextLifterHook for Reactor MDC propagation");
-        MdcContextLifterHook.install();
+        ContextPropagationConfiguration.install();
     }
 
     /**
-     * 애플리케이션 종료 시 Hook을 제거합니다.
+     * 애플리케이션 종료 시 Context Propagation을 해제합니다.
      */
     @Override
     public void destroy() {
-        log.debug("Uninstalling MdcContextLifterHook");
-        MdcContextLifterHook.uninstall();
+        ContextPropagationConfiguration.uninstall();
     }
 }

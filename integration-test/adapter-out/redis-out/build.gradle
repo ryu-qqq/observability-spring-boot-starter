@@ -30,8 +30,7 @@ dependencies {
     testImplementation libs.spring.boot.starter.data.redis
 
     // Testcontainers for Redis
-    testImplementation 'org.testcontainers:testcontainers:1.20.4'
-    testImplementation 'org.testcontainers:junit-jupiter:1.20.4'
+    testImplementation libs.bundles.testcontainers.redis
 }
 
 tasks.named('test') {

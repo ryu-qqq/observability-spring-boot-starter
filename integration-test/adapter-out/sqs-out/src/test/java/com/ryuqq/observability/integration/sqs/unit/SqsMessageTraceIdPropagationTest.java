@@ -1,4 +1,4 @@
-package com.ryuqq.observability.integration.sqs;
+package com.ryuqq.observability.integration.sqs.unit;
 
 import com.ryuqq.observability.core.trace.TraceIdHeaders;
 import com.ryuqq.observability.core.trace.TraceIdHolder;

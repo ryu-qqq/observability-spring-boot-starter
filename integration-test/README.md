@@ -284,3 +284,16 @@ integration-test/{module}/build/reports/tests/test/index.html
 | sqs-out | `observability-core` |
 | redis-out | `observability-core` |
 | bootstrap | 모든 observability 모듈 |
+
+---
+
+## 개선 예정 (v1.3.0)
+
+현재 `sqs-in`, `sqs-out`, `redis-in`, `redis-out` 모듈의 테스트는 실제 인프라(SQS, Redis)와 연동하지 않고 인터셉터/유틸리티 메서드만 직접 호출하는 방식입니다.
+
+**v1.3.0**에서는 Testcontainers를 활용한 **실제 통합 테스트**로 개선될 예정입니다:
+
+- **LocalStack**: AWS SQS 에뮬레이션
+- **Testcontainers Redis**: 실제 Redis Pub/Sub 및 Stream 테스트
+
+자세한 개선 계획은 [Testcontainers 통합 계획 문서](../docs/testcontainers-integration-plan.md)를 참조하세요.

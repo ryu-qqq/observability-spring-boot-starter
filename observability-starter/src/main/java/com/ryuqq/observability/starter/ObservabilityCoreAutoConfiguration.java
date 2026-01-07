@@ -1,6 +1,9 @@
 package com.ryuqq.observability.starter;
 
 import com.ryuqq.observability.core.masking.LogMasker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -13,7 +16,24 @@ import org.springframework.context.annotation.Bean;
  */
 @AutoConfiguration
 @EnableConfigurationProperties(ObservabilityProperties.class)
-public class ObservabilityCoreAutoConfiguration {
+public class ObservabilityCoreAutoConfiguration implements InitializingBean {
+
+    private static final Logger log = LoggerFactory.getLogger(ObservabilityCoreAutoConfiguration.class);
+    private static final String DEFAULT_SERVICE_NAME = "unknown";
+
+    private final ObservabilityProperties properties;
+
+    public ObservabilityCoreAutoConfiguration(ObservabilityProperties properties) {
+        this.properties = properties;
+    }
+
+    @Override
+    public void afterPropertiesSet() {
+        if (DEFAULT_SERVICE_NAME.equals(properties.getServiceName())) {
+            log.warn("Observability SDK: service-name is not configured. " +
+                    "Set 'spring.application.name' or 'observability.service-name' for better log tracing.");
+        }
+    }
 
     @Bean
     @ConditionalOnMissingBean
