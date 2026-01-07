@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: client-integration-test
+
+logging:
+  level:
+    root: INFO
+    com.ryuqq.observability: DEBUG

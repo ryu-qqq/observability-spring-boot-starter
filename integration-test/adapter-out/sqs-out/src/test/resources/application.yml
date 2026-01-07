@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: sqs-out-integration-test
+
+# Observability 설정
+observability:
+  service-name: sqs-out-test
+  trace:
+    enabled: true
+  message:
+    enabled: true
+    log-payload: true
+    max-payload-length: 500
+
+logging:
+  level:
+    root: INFO
+    com.ryuqq.observability: DEBUG
+    io.awspring.cloud: DEBUG

@@ -1,0 +1,53 @@
+spring:
+  application:
+    name: bootstrap-integration-test
+
+# Observability Starter 전체 설정 테스트
+observability:
+  service-name: bootstrap-test
+
+  trace:
+    enabled: true
+    header-names:
+      trace-id: X-Trace-Id
+      user-id: X-User-Id
+      tenant-id: X-Tenant-Id
+      organization-id: X-Organization-Id
+      user-roles: X-User-Roles
+
+  http:
+    enabled: true
+    log-level: INFO
+    slow-request-threshold-ms: 1000
+    max-body-length: 2048
+    skip-patterns:
+      - /actuator/**
+      - /health/**
+
+  logging:
+    enabled: true
+    log-level: INFO
+    include-args: true
+    include-result: true
+    max-result-length: 1024
+    include-execution-time: true
+    include-exception-trace: true
+    slow-execution-threshold-ms: 500
+
+  masking:
+    enabled: true
+    mask-fields:
+      - password
+      - secret
+      - token
+      - apiKey
+      - authorization
+    patterns:
+      - name: credit-card
+        pattern: "\\d{4}-\\d{4}-\\d{4}-\\d{4}"
+        replacement: "****-****-****-****"
+
+logging:
+  level:
+    root: INFO
+    com.ryuqq.observability: DEBUG

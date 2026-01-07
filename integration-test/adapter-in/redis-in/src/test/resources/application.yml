@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: redis-in-integration-test
+
+# Observability 설정
+observability:
+  service-name: redis-in-test
+  trace:
+    enabled: true
+  message:
+    enabled: true
+    log-payload: true
+    max-payload-length: 500
+
+logging:
+  level:
+    root: INFO
+    com.ryuqq.observability: DEBUG
+    org.springframework.data.redis: DEBUG

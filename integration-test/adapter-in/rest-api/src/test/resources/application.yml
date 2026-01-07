@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: rest-api-integration-test
+
+# Observability 설정
+observability:
+  service-name: rest-api-test
+
+  trace:
+    enabled: true
+    include-in-response: true
+    generate-if-missing: true
+
+  http:
+    enabled: true
+    log-request-body: true
+    log-response-body: true
+    max-body-length: 1000
+    slow-request-threshold-ms: 50
+    exclude-paths:
+      - /api/health
+      - /actuator/**
+    exclude-headers:
+      - Authorization
+      - Cookie
+      - Set-Cookie
+
+  masking:
+    enabled: true
+    mask-fields:
+      - password
+      - secret
+      - token
+      - apiKey
+
+logging:
+  level:
+    root: INFO
+    observability.http: DEBUG
+    com.ryuqq.observability: DEBUG

@@ -1,16 +1,16 @@
 /**
- * integration-test:adapter-in:rest-api
+ * integration-test:adapter-in:sqs-in
  *
- * Spring MVC 기반 REST API 통합 테스트 모듈
- * observability-web, observability-starter 모듈의 통합 테스트
+ * SQS 메시지 수신 TraceId 추출 통합 테스트 모듈
+ * observability-message 모듈의 SQS 인바운드 통합 테스트
  *
  * 테스트 항목:
- * - TraceIdFilter 동작 검증
- * - MDC 전파 검증
- * - 응답 헤더 TraceId 포함 검증
+ * - @SqsListener TraceId 추출 검증
+ * - 메시지 속성에서 TraceId 복원 검증
+ * - MDC 컨텍스트 설정 검증
  */
 
-description = 'Integration Test - Adapter In REST API (Spring MVC)'
+description = 'Integration Test - Adapter In SQS'
 
 // 통합 테스트 모듈은 publish하지 않음
 tasks.named('jar') { enabled = false }
@@ -21,16 +21,20 @@ tasks.named('publishMavenPublicationToMavenLocal') { enabled = false }
 dependencies {
     // 테스트 대상 모듈
     testImplementation project(':observability-core')
-    testImplementation project(':observability-web')
+    testImplementation project(':observability-message')
     testImplementation project(':observability-logging')
-    testImplementation project(':observability-starter')
 
     // Spring Boot Test
     testImplementation libs.spring.boot.starter.test
-    testImplementation libs.spring.boot.starter.web
-
-    // AOP (AspectJ for @Loggable)
     testImplementation libs.spring.boot.starter.aop
+
+    // AWS SQS
+    testImplementation 'io.awspring.cloud:spring-cloud-aws-starter-sqs:3.3.0'
+
+    // Testcontainers for LocalStack
+    testImplementation 'org.testcontainers:testcontainers:1.20.4'
+    testImplementation 'org.testcontainers:localstack:1.20.4'
+    testImplementation 'org.testcontainers:junit-jupiter:1.20.4'
 }
 
 tasks.named('test') {

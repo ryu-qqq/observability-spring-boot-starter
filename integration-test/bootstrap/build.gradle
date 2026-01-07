@@ -1,16 +1,16 @@
 /**
- * integration-test:adapter-out
+ * integration-test:bootstrap
  *
- * HTTP Client TraceId 전파 통합 테스트 모듈
- * observability-client 모듈의 통합 테스트
+ * Observability Starter 전체 통합 테스트 모듈.
+ * 모든 모듈이 함께 동작하는지 검증합니다.
  *
  * 테스트 항목:
- * - RestTemplate TraceId 헤더 전파 검증
- * - WebClient TraceId 헤더 전파 검증
- * - Feign Client TraceId 헤더 전파 검증 (optional)
+ * - AutoConfiguration 자동 등록 검증
+ * - Bean 생성 검증
+ * - 전체 흐름 통합 테스트
  */
 
-description = 'Integration Test - Adapter Out HTTP Client'
+description = 'Integration Test - Bootstrap (Full Starter Integration)'
 
 // 통합 테스트 모듈은 publish하지 않음
 tasks.named('jar') { enabled = false }
@@ -19,20 +19,35 @@ tasks.named('sourcesJar') { enabled = false }
 tasks.named('publishMavenPublicationToMavenLocal') { enabled = false }
 
 dependencies {
-    // 테스트 대상 모듈
+    // 테스트 대상 모듈 - Starter를 통해 모든 모듈 포함
+    testImplementation project(':observability-starter')
+
+    // Core 모듈 (TraceIdHolder, LogMasker 등 직접 참조용)
     testImplementation project(':observability-core')
+
+    // Web 모듈 (Servlet Filter 테스트용)
+    testImplementation project(':observability-web')
+
+    // Client 모듈 (RestTemplate, WebClient 테스트용)
     testImplementation project(':observability-client')
+
+    // Logging 모듈 (@Loggable 테스트용)
     testImplementation project(':observability-logging')
 
     // Spring Boot Test
     testImplementation libs.spring.boot.starter.test
     testImplementation libs.spring.boot.starter.web
+
+    // AOP (AspectJ for @Loggable)
+    testImplementation libs.spring.boot.starter.aop
+
+    // WebClient (Reactive)
     testImplementation libs.spring.boot.starter.webflux
 
     // Reactor Test (WebClient 테스트용)
     testImplementation libs.reactor.test
 
-    // MockWebServer (외부 API Mock)
+    // MockWebServer for HTTP client testing
     testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
 }
 

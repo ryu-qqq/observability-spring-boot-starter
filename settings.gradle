@@ -31,5 +31,20 @@ include 'integration-test:adapter-in:rest-api'
 // Adapter-In: Gateway (Spring WebFlux)
 include 'integration-test:adapter-in:gateway'
 
-// Adapter-Out: HTTP Client (RestTemplate, WebClient)
-include 'integration-test:adapter-out'
+// Adapter-In: SQS Listener
+include 'integration-test:adapter-in:sqs-in'
+
+// Adapter-In: Redis Listener
+include 'integration-test:adapter-in:redis-in'
+
+// Adapter-Out: HTTP Client (RestTemplate, WebClient, RestClient)
+include 'integration-test:adapter-out:http-client'
+
+// Adapter-Out: SQS Publisher
+include 'integration-test:adapter-out:sqs-out'
+
+// Adapter-Out: Redis Publisher
+include 'integration-test:adapter-out:redis-out'
+
+// Bootstrap: Full Starter Integration
+include 'integration-test:bootstrap'

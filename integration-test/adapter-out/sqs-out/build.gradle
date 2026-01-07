@@ -1,0 +1,45 @@
+/**
+ * integration-test:adapter-out:sqs-out
+ *
+ * SQS 메시지 발행 TraceId 전파 통합 테스트 모듈
+ * observability-message 모듈의 SQS 아웃바운드 통합 테스트
+ *
+ * 테스트 항목:
+ * - SqsTemplate TraceId 헤더 전파 검증
+ * - 메시지 속성에 TraceId 포함 검증
+ */
+
+description = 'Integration Test - Adapter Out SQS'
+
+// 통합 테스트 모듈은 publish하지 않음
+tasks.named('jar') { enabled = false }
+tasks.named('javadocJar') { enabled = false }
+tasks.named('sourcesJar') { enabled = false }
+tasks.named('publishMavenPublicationToMavenLocal') { enabled = false }
+
+dependencies {
+    // 테스트 대상 모듈
+    testImplementation project(':observability-core')
+    testImplementation project(':observability-message')
+    testImplementation project(':observability-logging')
+
+    // Spring Boot Test
+    testImplementation libs.spring.boot.starter.test
+
+    // AWS SQS
+    testImplementation 'io.awspring.cloud:spring-cloud-aws-starter-sqs:3.3.0'
+
+    // Testcontainers for LocalStack
+    testImplementation 'org.testcontainers:testcontainers:1.20.4'
+    testImplementation 'org.testcontainers:localstack:1.20.4'
+    testImplementation 'org.testcontainers:junit-jupiter:1.20.4'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+        showStandardStreams = true
+    }
+}
