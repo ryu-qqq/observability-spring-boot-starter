@@ -95,10 +95,9 @@ public class ReactiveTraceIdFilter implements WebFilter, Ordered {
      * 요청을 처리하고 Reactor Context에 TraceId와 사용자 컨텍스트를 전파합니다.
      */
     private Mono<Void> processRequest(ServerWebExchange exchange, WebFilterChain chain, String traceId) {
-        // 응답 헤더에 TraceId 추가
+        // 응답 헤더에 TraceId 추가 (beforeCommit 콜백으로 안전하게 추가)
         if (properties.isIncludeInResponse() && traceId != null) {
-            ServerHttpResponse response = exchange.getResponse();
-            response.getHeaders().add(properties.getResponseHeaderName(), traceId);
+            addTraceIdToResponse(exchange.getResponse(), traceId);
         }
 
         // 요청 헤더에 TraceId 추가 (downstream 전파용)
@@ -162,5 +161,34 @@ public class ReactiveTraceIdFilter implements WebFilter, Ordered {
         }
 
         return newCtx;
+    }
+
+    /**
+     * 응답 헤더에 TraceId를 안전하게 추가합니다.
+     *
+     * <p>beforeCommit 콜백을 사용하여 응답이 커밋되기 직전에 헤더를 추가합니다.
+     * 이미 커밋된 응답(예: Actuator 엔드포인트)에 대해서는 헤더 추가를 건너뜁니다.</p>
+     *
+     * @param response 응답 객체
+     * @param traceId 추가할 TraceId
+     */
+    private void addTraceIdToResponse(ServerHttpResponse response, String traceId) {
+        String headerName = properties.getResponseHeaderName();
+
+        response.beforeCommit(() -> {
+            try {
+                // 이미 커밋되었거나 헤더가 읽기 전용인 경우 건너뜀
+                if (!response.isCommitted()) {
+                    HttpHeaders headers = response.getHeaders();
+                    if (!headers.containsKey(headerName)) {
+                        headers.add(headerName, traceId);
+                    }
+                }
+            } catch (UnsupportedOperationException e) {
+                // ReadOnlyHttpHeaders인 경우 무시 (이미 커밋된 응답)
+                log.trace("Cannot add TraceId header to already committed response");
+            }
+            return Mono.empty();
+        });
     }
 }
