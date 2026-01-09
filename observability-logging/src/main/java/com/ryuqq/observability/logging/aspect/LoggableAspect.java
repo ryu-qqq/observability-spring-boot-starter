@@ -102,7 +102,11 @@ public class LoggableAspect {
         }
 
         Marker marker = Markers.appendEntries(logData);
-        log(logger, loggable.level(), marker, "{} completed in {}ms", methodName, duration);
+        if (loggable.includeExecutionTime()) {
+            log(logger, loggable.level(), marker, "{} completed in {}ms", methodName, duration);
+        } else {
+            log(logger, loggable.level(), marker, "{} completed", methodName);
+        }
     }
 
     private void logSlowExecution(Logger logger, Loggable loggable, String methodName, long duration) {
@@ -129,11 +133,13 @@ public class LoggableAspect {
         logData.put("phase", "failed");
         logData.put("duration", duration);
         logData.put("error", e.getClass().getSimpleName());
-        logData.put("errorMessage", e.getMessage());
+
+        String maskedErrorMessage = truncate(logMasker.mask(String.valueOf(e.getMessage())));
+        logData.put("errorMessage", maskedErrorMessage);
 
         Marker marker = Markers.appendEntries(logData);
         log(logger, loggable.errorLevel(), marker, "{} failed after {}ms: {} - {}",
-                new Object[]{methodName, duration, e.getClass().getSimpleName(), e.getMessage()}, e);
+                methodName, duration, e.getClass().getSimpleName(), maskedErrorMessage, e);
     }
 
     private String formatArgs(Object[] args) {
@@ -164,20 +170,6 @@ public class LoggableAspect {
             case INFO -> logger.info(marker, format, args);
             case WARN -> logger.warn(marker, format, args);
             case ERROR -> logger.error(marker, format, args);
-        }
-    }
-
-    private void log(Logger logger, Loggable.LogLevel level, Marker marker, String format, Object[] args, Throwable e) {
-        Object[] argsWithException = new Object[args.length + 1];
-        System.arraycopy(args, 0, argsWithException, 0, args.length);
-        argsWithException[args.length] = e;
-
-        switch (level) {
-            case TRACE -> logger.trace(marker, format, argsWithException);
-            case DEBUG -> logger.debug(marker, format, argsWithException);
-            case INFO -> logger.info(marker, format, argsWithException);
-            case WARN -> logger.warn(marker, format, argsWithException);
-            case ERROR -> logger.error(marker, format, argsWithException);
         }
     }
 }

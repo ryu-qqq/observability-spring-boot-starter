@@ -10,7 +10,7 @@
 
 | 라이브러리 | 버전 | 용도 |
 |-----------|------|------|
-| **logstash-logback-encoder** | `7.4` 이상 | JSON 구조화 로깅 |
+| **logstash-logback-encoder** | `8.0` 이상 | JSON 구조화 로깅 |
 | **observability-starter** | `v1.3.0` 이상 | TraceId 관리 + 구조화 로깅 SDK |
 | **slf4j-api** | Spring Boot 관리 | 로깅 추상화 |
 | **logback-classic** | Spring Boot 관리 | 로깅 구현체 |
@@ -20,7 +20,7 @@
 ```toml
 [versions]
 # Logging
-logstashLogback = "7.4"
+logstashLogback = "8.0"
 
 # Observability SDK
 observabilityStarter = "v1.3.0"
@@ -63,12 +63,12 @@ dependencies {
 
 ### 2.1 Console 포맷 (Development)
 
-```
+```text
 {timestamp} {level} [{thread}] {logger} - {message} [traceId={traceId}, userId={userId}, requestId={requestId}]
 ```
 
 **예시:**
-```
+```text
 2024-01-06 10:30:45.123 INFO  [http-nio-8080-exec-1] c.e.s.OrderService - 주문 생성 완료: orderId=ORD-123 [traceId=abc-123, userId=user-001, requestId=req-456]
 ```
 
@@ -469,7 +469,7 @@ log.info("사용자 인증: email={}", LogMasker.maskEmail(email));
 
 ### 5.1 Filter 실행 순서
 
-```
+```text
 요청 수신
     ↓
 TraceIdFilter (Order=0, SDK)     ← traceId 설정
