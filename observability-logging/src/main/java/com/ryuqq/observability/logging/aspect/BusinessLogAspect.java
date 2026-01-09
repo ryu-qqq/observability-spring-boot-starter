@@ -2,12 +2,14 @@ package com.ryuqq.observability.logging.aspect;
 
 import com.ryuqq.observability.logging.annotation.BusinessLog;
 import com.ryuqq.observability.logging.config.BusinessLoggingProperties;
+import net.logstash.logback.marker.Markers;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
 import org.springframework.context.expression.MethodBasedEvaluationContext;
 import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.core.ParameterNameDiscoverer;
@@ -118,13 +120,14 @@ public class BusinessLogAspect {
             logData.put("errorMessage", error.getMessage());
         }
 
-        // 구조화된 로그 출력
-        String logMessage = formatLogMessage(logData);
+        // 구조화된 로그 출력 (Markers 사용)
+        Marker marker = Markers.appendEntries(logData);
+        String action = businessLog.action();
 
         if (success) {
-            businessLogger.info("[BUSINESS] {}", logMessage);
+            businessLogger.info(marker, "[BUSINESS] action={}", action);
         } else {
-            businessLogger.error("[BUSINESS] {}", logMessage);
+            businessLogger.error(marker, "[BUSINESS] action={}", action);
         }
     }
 
@@ -149,28 +152,5 @@ public class BusinessLogAspect {
         } catch (Exception e) {
             return null;
         }
-    }
-
-    private String formatLogMessage(Map<String, Object> data) {
-        StringBuilder sb = new StringBuilder();
-        boolean first = true;
-
-        for (Map.Entry<String, Object> entry : data.entrySet()) {
-            if (!first) {
-                sb.append(" ");
-            }
-            first = false;
-
-            sb.append(entry.getKey()).append("=");
-
-            Object value = entry.getValue();
-            if (value instanceof String str && str.contains(" ")) {
-                sb.append("\"").append(value).append("\"");
-            } else {
-                sb.append(value);
-            }
-        }
-
-        return sb.toString();
     }
 }

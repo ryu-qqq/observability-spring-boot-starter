@@ -25,7 +25,7 @@ dependencies {
 
     // Logback 설정
     compileOnly libs.logback.classic
-    compileOnly libs.logstash.logback.encoder
+    api libs.logstash.logback.encoder  // 구조화 로깅(Markers) 사용으로 런타임 필수
 
     // Jackson (JSON 로깅)
     compileOnly libs.jackson.databind
@@ -41,4 +41,5 @@ dependencies {
     testImplementation libs.mockito.core
     testImplementation libs.mockito.junit.jupiter
     testImplementation libs.logback.classic
+    testImplementation libs.logstash.logback.encoder
 }
