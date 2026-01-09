@@ -3,15 +3,19 @@ package com.ryuqq.observability.logging.aspect;
 import com.ryuqq.observability.core.masking.LogMasker;
 import com.ryuqq.observability.logging.annotation.Loggable;
 import com.ryuqq.observability.logging.config.BusinessLoggingProperties;
+import net.logstash.logback.marker.Markers;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * @Loggable 어노테이션 처리 AOP Aspect.
@@ -71,31 +75,34 @@ public class LoggableAspect {
     }
 
     private void logStart(Logger logger, Loggable loggable, String methodName, Object[] args) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(methodName).append(" started");
+        Map<String, Object> logData = new LinkedHashMap<>();
+        logData.put("method", methodName);
+        logData.put("phase", "started");
 
         if (loggable.includeArgs() && args != null && args.length > 0) {
-            String argsStr = formatArgs(args);
-            sb.append(" with args: ").append(argsStr);
+            logData.put("args", formatArgs(args));
         }
 
-        log(logger, loggable.level(), sb.toString());
+        Marker marker = Markers.appendEntries(logData);
+        log(logger, loggable.level(), marker, "{} started", methodName);
     }
 
     private void logSuccess(Logger logger, Loggable loggable, String methodName, long duration, Object result) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(methodName).append(" completed");
+        Map<String, Object> logData = new LinkedHashMap<>();
+        logData.put("method", methodName);
+        logData.put("phase", "completed");
 
         if (loggable.includeExecutionTime()) {
-            sb.append(" in ").append(duration).append("ms");
+            logData.put("duration", duration);
         }
 
         if (loggable.includeResult() && result != null) {
             String resultStr = logMasker.mask(result.toString());
-            sb.append(" with result: ").append(truncate(resultStr));
+            logData.put("result", truncate(resultStr));
         }
 
-        log(logger, loggable.level(), sb.toString());
+        Marker marker = Markers.appendEntries(logData);
+        log(logger, loggable.level(), marker, "{} completed in {}ms", methodName, duration);
     }
 
     private void logSlowExecution(Logger logger, Loggable loggable, String methodName, long duration) {
@@ -104,16 +111,29 @@ public class LoggableAspect {
                 : properties.getSlowExecutionThreshold();
 
         if (duration > threshold) {
-            logger.warn("{} slow execution detected: {}ms (threshold: {}ms)",
+            Map<String, Object> logData = new LinkedHashMap<>();
+            logData.put("method", methodName);
+            logData.put("phase", "slow_execution");
+            logData.put("duration", duration);
+            logData.put("threshold", threshold);
+
+            Marker marker = Markers.appendEntries(logData);
+            logger.warn(marker, "{} slow execution detected: {}ms (threshold: {}ms)",
                     methodName, duration, threshold);
         }
     }
 
     private void logError(Logger logger, Loggable loggable, String methodName, long duration, Throwable e) {
-        String message = String.format("%s failed after %dms: %s - %s",
-                methodName, duration, e.getClass().getSimpleName(), e.getMessage());
+        Map<String, Object> logData = new LinkedHashMap<>();
+        logData.put("method", methodName);
+        logData.put("phase", "failed");
+        logData.put("duration", duration);
+        logData.put("error", e.getClass().getSimpleName());
+        logData.put("errorMessage", e.getMessage());
 
-        log(logger, loggable.errorLevel(), message, e);
+        Marker marker = Markers.appendEntries(logData);
+        log(logger, loggable.errorLevel(), marker, "{} failed after {}ms: {} - {}",
+                new Object[]{methodName, duration, e.getClass().getSimpleName(), e.getMessage()}, e);
     }
 
     private String formatArgs(Object[] args) {
@@ -137,32 +157,27 @@ public class LoggableAspect {
         return str;
     }
 
-    private void log(Logger logger, Loggable.LogLevel level, String message) {
-        log(logger, level, message, null);
+    private void log(Logger logger, Loggable.LogLevel level, Marker marker, String format, Object... args) {
+        switch (level) {
+            case TRACE -> logger.trace(marker, format, args);
+            case DEBUG -> logger.debug(marker, format, args);
+            case INFO -> logger.info(marker, format, args);
+            case WARN -> logger.warn(marker, format, args);
+            case ERROR -> logger.error(marker, format, args);
+        }
     }
 
-    private void log(Logger logger, Loggable.LogLevel level, String message, Throwable e) {
+    private void log(Logger logger, Loggable.LogLevel level, Marker marker, String format, Object[] args, Throwable e) {
+        Object[] argsWithException = new Object[args.length + 1];
+        System.arraycopy(args, 0, argsWithException, 0, args.length);
+        argsWithException[args.length] = e;
+
         switch (level) {
-            case TRACE -> {
-                if (e != null) logger.trace(message, e);
-                else logger.trace(message);
-            }
-            case DEBUG -> {
-                if (e != null) logger.debug(message, e);
-                else logger.debug(message);
-            }
-            case INFO -> {
-                if (e != null) logger.info(message, e);
-                else logger.info(message);
-            }
-            case WARN -> {
-                if (e != null) logger.warn(message, e);
-                else logger.warn(message);
-            }
-            case ERROR -> {
-                if (e != null) logger.error(message, e);
-                else logger.error(message);
-            }
+            case TRACE -> logger.trace(marker, format, argsWithException);
+            case DEBUG -> logger.debug(marker, format, argsWithException);
+            case INFO -> logger.info(marker, format, argsWithException);
+            case WARN -> logger.warn(marker, format, argsWithException);
+            case ERROR -> logger.error(marker, format, argsWithException);
         }
     }
 }
