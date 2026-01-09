@@ -27,6 +27,9 @@ dependencies {
 
     // Spring Boot AutoConfiguration (선택적)
     compileOnly libs.spring.boot.autoconfigure
+
+    // 구조화 로깅 (StructuredArguments, Markers) - 선택적
+    compileOnly libs.logstash.logback.encoder
     annotationProcessor libs.spring.boot.configuration.processor
 
     // Test
@@ -35,4 +38,5 @@ dependencies {
     testImplementation libs.reactor.core
     testImplementation libs.junit.jupiter
     testImplementation libs.assertj.core
+    testImplementation libs.logstash.logback.encoder
 }

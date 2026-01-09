@@ -7,8 +7,10 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import net.logstash.logback.marker.Markers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
 import org.springframework.core.Ordered;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -16,6 +18,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -104,24 +107,24 @@ public class HttpLoggingFilter extends OncePerRequestFilter implements Ordered {
         String uri = request.getRequestURI();
         String queryString = request.getQueryString();
         String normalizedUri = pathNormalizer.normalize(uri);
+        String clientIp = getClientIp(request);
 
-        // 기본 정보
+        // 기본 정보 (메시지)
         StringBuilder message = new StringBuilder();
         message.append("HTTP Request: ").append(method).append(" ").append(uri);
         if (queryString != null) {
             message.append("?").append(queryString);
         }
 
-        // 구조화 로깅을 위한 컨텍스트 추가
+        // 구조화 로깅을 위한 컨텍스트 추가 (MDC)
         TraceIdHolder.addContext("http.method", method);
         TraceIdHolder.addContext("http.uri", uri);
         TraceIdHolder.addContext("http.normalizedUri", normalizedUri);
-
-        // 클라이언트 IP
-        String clientIp = getClientIp(request);
         TraceIdHolder.addContext("http.clientIp", clientIp);
 
-        log.info("{}", message);
+        // 구조화된 필드 (JSON 로그에서 별도 필드로 출력)
+        Marker httpMarker = createRequestMarker(method, uri, normalizedUri, queryString, clientIp);
+        log.info(httpMarker, "{}", message);
 
         // 헤더 로깅 (DEBUG 레벨)
         if (log.isDebugEnabled()) {
@@ -139,11 +142,26 @@ public class HttpLoggingFilter extends OncePerRequestFilter implements Ordered {
         }
     }
 
+    private Marker createRequestMarker(String method, String uri, String normalizedUri,
+                                        String queryString, String clientIp) {
+        Map<String, Object> fields = new LinkedHashMap<>();
+        fields.put("http_method", method);
+        fields.put("http_path", uri);
+        fields.put("http_path_normalized", normalizedUri);
+        if (queryString != null) {
+            fields.put("http_query", queryString);
+        }
+        fields.put("http_client_ip", clientIp);
+        fields.put("http_direction", "inbound");
+        return Markers.appendEntries(fields);
+    }
+
     private void logResponse(HttpServletRequest request,
                              HttpServletResponse response,
                              long duration) {
         String method = request.getMethod();
         String uri = request.getRequestURI();
+        String normalizedUri = pathNormalizer.normalize(uri);
         int status = response.getStatus();
 
         // 느린 요청 여부 판단
@@ -156,15 +174,18 @@ public class HttpLoggingFilter extends OncePerRequestFilter implements Ordered {
         String message = String.format("HTTP Response: %s %s | status=%d | duration=%dms%s",
                 method, uri, status, duration, isSlow ? " [SLOW]" : "");
 
-        // 컨텍스트 추가
+        // 컨텍스트 추가 (MDC)
         TraceIdHolder.addContext("http.status", String.valueOf(status));
         TraceIdHolder.addContext("http.duration", String.valueOf(duration));
 
+        // 구조화된 필드 (JSON 로그에서 별도 필드로 출력)
+        Marker httpMarker = createResponseMarker(method, uri, normalizedUri, status, duration, isSlow);
+
         // 로그 레벨에 따라 출력
         switch (logLevel) {
-            case "ERROR" -> log.error("{}", message);
-            case "WARN" -> log.warn("{}", message);
-            default -> log.info("{}", message);
+            case "ERROR" -> log.error(httpMarker, "{}", message);
+            case "WARN" -> log.warn(httpMarker, "{}", message);
+            default -> log.info(httpMarker, "{}", message);
         }
 
         // Body 로깅 (DEBUG 레벨, 에러 시 INFO)
@@ -179,6 +200,21 @@ public class HttpLoggingFilter extends OncePerRequestFilter implements Ordered {
                 }
             }
         }
+    }
+
+    private Marker createResponseMarker(String method, String uri, String normalizedUri,
+                                         int status, long duration, boolean isSlow) {
+        Map<String, Object> fields = new LinkedHashMap<>();
+        fields.put("http_method", method);
+        fields.put("http_path", uri);
+        fields.put("http_path_normalized", normalizedUri);
+        fields.put("http_status", status);
+        fields.put("http_duration_ms", duration);
+        fields.put("http_direction", "inbound");
+        if (isSlow) {
+            fields.put("http_slow", true);
+        }
+        return Markers.appendEntries(fields);
     }
 
     private String determineLogLevel(int status, boolean isSlow) {

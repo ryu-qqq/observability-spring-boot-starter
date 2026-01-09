@@ -2,9 +2,11 @@ package com.ryuqq.observability.webflux.http;
 
 import com.ryuqq.observability.core.masking.LogMasker;
 import com.ryuqq.observability.webflux.config.ReactiveHttpLoggingProperties;
+import net.logstash.logback.marker.Markers;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
 import org.springframework.core.Ordered;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferFactory;
@@ -27,6 +29,7 @@ import java.io.ByteArrayOutputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -174,15 +177,18 @@ public class ReactiveHttpLoggingFilter implements WebFilter, Ordered {
             String uri = request.getURI().getPath();
             String query = request.getURI().getQuery();
             String normalizedUri = pathNormalizer.normalize(uri);
+            String clientIp = getClientIp(request);
 
-            // 기본 요청 정보
+            // 기본 요청 정보 (메시지)
             StringBuilder message = new StringBuilder();
             message.append("HTTP Request: ").append(method).append(" ").append(uri);
             if (query != null && !query.isEmpty()) {
                 message.append("?").append(query);
             }
 
-            log.info("{}", message);
+            // 구조화된 필드 (JSON 로그에서 별도 필드로 출력)
+            Marker httpMarker = createRequestMarker(method, uri, normalizedUri, query, clientIp);
+            log.info(httpMarker, "{}", message);
 
             // 헤더 로깅 (DEBUG 레벨)
             if (log.isDebugEnabled()) {
@@ -192,10 +198,23 @@ public class ReactiveHttpLoggingFilter implements WebFilter, Ordered {
 
             // 클라이언트 IP 정보 (DEBUG 레벨)
             if (log.isDebugEnabled()) {
-                String clientIp = getClientIp(request);
                 log.debug("Client IP: {}, Normalized URI: {}", clientIp, normalizedUri);
             }
         });
+    }
+
+    private Marker createRequestMarker(String method, String uri, String normalizedUri,
+                                        String query, String clientIp) {
+        Map<String, Object> fields = new LinkedHashMap<>();
+        fields.put("http_method", method);
+        fields.put("http_path", uri);
+        fields.put("http_path_normalized", normalizedUri);
+        if (query != null && !query.isEmpty()) {
+            fields.put("http_query", query);
+        }
+        fields.put("http_client_ip", clientIp);
+        fields.put("http_direction", "inbound");
+        return Markers.appendEntries(fields);
     }
 
     /**
@@ -208,6 +227,7 @@ public class ReactiveHttpLoggingFilter implements WebFilter, Ordered {
 
         String method = request.getMethod().name();
         String uri = request.getURI().getPath();
+        String normalizedUri = pathNormalizer.normalize(uri);
         Integer statusCode = response.getStatusCode() != null ? response.getStatusCode().value() : 0;
 
         // 느린 요청 여부 판단
@@ -217,13 +237,16 @@ public class ReactiveHttpLoggingFilter implements WebFilter, Ordered {
         String message = String.format("HTTP Response: %s %s | status=%d | duration=%dms%s",
                 method, uri, statusCode, duration, isSlow ? " [SLOW]" : "");
 
+        // 구조화된 필드 (JSON 로그에서 별도 필드로 출력)
+        Marker httpMarker = createResponseMarker(method, uri, normalizedUri, statusCode, duration, isSlow);
+
         // 상태 코드에 따른 로그 레벨 결정
         if (statusCode >= 500) {
-            log.error("{}", message);
+            log.error(httpMarker, "{}", message);
         } else if (statusCode >= 400 || isSlow) {
-            log.warn("{}", message);
+            log.warn(httpMarker, "{}", message);
         } else {
-            log.info("{}", message);
+            log.info(httpMarker, "{}", message);
         }
 
         // 응답 헤더 로깅 (DEBUG 레벨) - LoggingResponseDecorator에서 캐싱된 헤더 사용
@@ -258,6 +281,21 @@ public class ReactiveHttpLoggingFilter implements WebFilter, Ordered {
         }
     }
 
+    private Marker createResponseMarker(String method, String uri, String normalizedUri,
+                                         int status, long duration, boolean isSlow) {
+        Map<String, Object> fields = new LinkedHashMap<>();
+        fields.put("http_method", method);
+        fields.put("http_path", uri);
+        fields.put("http_path_normalized", normalizedUri);
+        fields.put("http_status", status);
+        fields.put("http_duration_ms", duration);
+        fields.put("http_direction", "inbound");
+        if (isSlow) {
+            fields.put("http_slow", true);
+        }
+        return Markers.appendEntries(fields);
+    }
+
     /**
      * 에러 발생 시 로깅합니다.
      */
@@ -267,9 +305,28 @@ public class ReactiveHttpLoggingFilter implements WebFilter, Ordered {
 
         String method = request.getMethod().name();
         String uri = request.getURI().getPath();
+        String normalizedUri = pathNormalizer.normalize(uri);
 
-        log.error("HTTP Error: {} {} | duration={}ms | error={}",
+        // 구조화된 필드 (JSON 로그에서 별도 필드로 출력)
+        Marker httpMarker = createErrorMarker(method, uri, normalizedUri, duration, error);
+
+        log.error(httpMarker, "HTTP Error: {} {} | duration={}ms | error={}",
                 method, uri, duration, error.getMessage());
+    }
+
+    private Marker createErrorMarker(String method, String uri, String normalizedUri,
+                                      long duration, Throwable error) {
+        Map<String, Object> fields = new LinkedHashMap<>();
+        fields.put("http_method", method);
+        fields.put("http_path", uri);
+        fields.put("http_path_normalized", normalizedUri);
+        fields.put("http_status", 500);
+        fields.put("http_duration_ms", duration);
+        fields.put("http_direction", "inbound");
+        fields.put("http_error", true);
+        fields.put("http_error_type", error.getClass().getSimpleName());
+        fields.put("http_error_message", error.getMessage());
+        return Markers.appendEntries(fields);
     }
 
     /**
